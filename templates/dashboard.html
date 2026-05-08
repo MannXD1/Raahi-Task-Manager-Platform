@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raahi Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Three.js Canvas Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="app-container glass-panel">
+        <header>
+            <h1><span class="highlight">Ra</span>ahi</h1>
+            <div id="user-info" class="hidden">
+                <span id="username-display"></span>
+                <button id="logout-btn" class="btn btn-outline">Logout</button>
+            </div>
+        </header>
+
+        <!-- Auth Section -->
+        <main id="auth-section">
+            <div class="form-container glass-panel-inner auth-box">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="auth-tab active">Login</button>
+                    <button id="tab-register" class="auth-tab">Sign Up</button>
+                </div>
+                
+                <form id="login-form" class="auth-form active">
+                    <div class="form-header">
+                        <h2>Welcome Back</h2>
+                        <p class="subtitle">Enter your credentials to continue</p>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="login-username" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Login</button>
+                </form>
+
+                <form id="register-form" class="auth-form hidden">
+                    <div class="form-header">
+                        <h2>Create Account</h2>
+                        <p class="subtitle">Join us and start managing tasks</p>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="reg-username" placeholder="Choose Username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="reg-email" placeholder="Email Address">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="reg-password" placeholder="Create Password" required>
+                    </div>
+                    <div class="input-group">
+                        <select id="reg-role">
+                            <option value="MEMBER">Member</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-full">Create Account</button>
+                </form>
+            </div>
+        </main>
+
+        <!-- Dashboard Section -->
+        <main id="dashboard-section" class="hidden">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <button id="export-pdf-btn" class="btn btn-sm btn-secondary" onclick="exportToPDF()">Export to PDF</button>
+            </div>
+            
+            <div id="pdf-content-area">
+                <div class="stats-grid">
+                <div id="card-total" class="stat-card glass-panel-inner active-stat" onclick="selectStatusFilter(null)" style="cursor: pointer; transition: 0.3s;">
+                    <h3>Total</h3>
+                    <div id="stat-total" class="stat-value">0</div>
+                </div>
+                <div id="card-todo" class="stat-card glass-panel-inner" onclick="selectStatusFilter('TODO')" style="cursor: pointer; transition: 0.3s;">
+                    <h3>To Do</h3>
+                    <div id="stat-todo" class="stat-value" style="color: var(--primary);">0</div>
+                </div>
+                <div id="card-done" class="stat-card glass-panel-inner" onclick="selectStatusFilter('DONE')" style="cursor: pointer; transition: 0.3s;">
+                    <h3>Done</h3>
+                    <div id="stat-done" class="stat-value" style="color: var(--success);">0</div>
+                </div>
+                <div id="card-overdue" class="stat-card glass-panel-inner" onclick="selectStatusFilter('OVERDUE')" style="cursor: pointer; transition: 0.3s;">
+                    <h3>Overdue</h3>
+                    <div id="stat-overdue" class="stat-value" style="color: var(--danger);">0</div>
+                </div>
+            </div>
+
+            <!-- Progress Chart -->
+            <div class="glass-panel-inner" style="margin-bottom: 20px; padding: 20px;">
+                <h3 style="margin-bottom: 10px;">Project Progress</h3>
+                <div style="height: 200px; width: 100%;">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <!-- Projects List -->
+                <div class="projects-area glass-panel-inner">
+                    <div class="section-header">
+                        <h2>Projects</h2>
+                        <button id="new-project-btn" class="btn btn-sm btn-primary">+ New</button>
+                    </div>
+                    <form id="project-form" class="hidden slide-down">
+                        <input type="text" id="proj-name" placeholder="Project Name" required>
+                        <button type="submit" class="btn btn-sm btn-success">Save</button>
+                    </form>
+                    <ul id="projects-list" class="item-list"></ul>
+                </div>
+
+                <!-- Tasks List -->
+                <div class="tasks-area glass-panel-inner">
+                    <div class="section-header">
+                        <h2>Tasks</h2>
+                        <button id="new-task-btn" class="btn btn-sm btn-primary">+ New</button>
+                    </div>
+                    <form id="task-form" class="hidden slide-down">
+                        <input type="text" id="task-title" placeholder="Task Title" required>
+                        <textarea id="task-desc" placeholder="Task Description..." style="width: 100%; margin-top: 5px; padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;"></textarea>
+                        <select id="task-project" required><option value="">Select Project</option></select>
+                        <select id="task-assigned">
+                            <option value="">Assign To...</option>
+                        </select>
+                        <select id="task-status">
+                            <option value="TODO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="DONE">Done</option>
+                        </select>
+                        <input type="date" id="task-due-date" placeholder="Due Date">
+                        <div style="margin-top: 5px;">
+                            <label style="font-size: 0.8em; color: #ccc;">Attachment (optional):</label>
+                            <input type="file" id="task-file" style="margin-top: 5px; width: 100%;">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success" style="margin-top: 10px;">Save Task</button>
+                    </form>
+                    <ul id="tasks-list" class="item-list"></ul>
+                </div>
+            </div>
+            </div> <!-- End pdf-content-area -->
+        </main>
+    </div>
+
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    <script src="/static/app.js"></script>
+</body>
+</html>
