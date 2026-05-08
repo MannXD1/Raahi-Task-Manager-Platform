@@ -19,6 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
+    attachment = serializers.FileField(use_url=True)  # ✅ forces absolute URL
 
     class Meta:
         model = Task
