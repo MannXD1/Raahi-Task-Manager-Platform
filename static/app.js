@@ -75,6 +75,17 @@ let currentProjectId = null;
 let currentStatusFilter = null;
 let globalDisplayTasks = [];
 
+// Safe JSON parser — prevents "Unexpected token '<'" when server returns HTML error pages
+async function safeJson(res) {
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch {
+        console.error('Non-JSON response from server:', text.substring(0, 200));
+        return null;
+    }
+}
+
 // CSRF Token Helper for Django
 function getCsrfToken() {
     let cookieValue = '';
@@ -151,8 +162,8 @@ registerForm.addEventListener('submit', async (e) => {
         user = await res.json();
         initDashboard();
     } else {
-        const errData = await res.json();
-        alert('Registration failed: ' + JSON.stringify(errData));
+        const errData = await safeJson(res);
+        alert('Registration failed: ' + (errData ? JSON.stringify(errData) : `Server error (${res.status})`));
     }
 });
 
@@ -199,7 +210,9 @@ async function fetchAllUsers() {
 // Fetch and Render Projects
 async function fetchProjects() {
     const res = await fetch(`${apiBase}/projects/`);
-    projects = await res.json();
+    if (!res.ok) { console.error('fetchProjects failed:', res.status); return; }
+    projects = await safeJson(res);
+    if (!projects) return;
     const list = document.getElementById('projects-list');
     const select = document.getElementById('task-project');
     
@@ -385,7 +398,9 @@ window.selectStatusFilter = function(filter) {
 // Fetch and Render Tasks
 async function fetchTasks() {
     const res = await fetch(`${apiBase}/tasks/`);
-    let allTasks = await res.json();
+    if (!res.ok) { console.error('fetchTasks failed:', res.status); return; }
+    let allTasks = await safeJson(res);
+    if (!allTasks) return;
     
     // 1. Filter by Project
     let projectTasks = currentProjectId ? allTasks.filter(t => t.project === currentProjectId) : allTasks;
@@ -557,8 +572,8 @@ document.getElementById('project-form').addEventListener('submit', async (e) => 
     });
 
     if(!res.ok) {
-        const err = await res.json();
-        alert('Failed to create project: ' + JSON.stringify(err));
+        const err = await safeJson(res);
+        alert('Failed to create project: ' + (err ? JSON.stringify(err) : `Server error (${res.status})`));
         return;
     }
 
@@ -596,8 +611,8 @@ document.getElementById('task-form').addEventListener('submit', async (e) => {
     });
 
     if(!res.ok) {
-        const err = await res.json();
-        alert('Failed to create task: ' + JSON.stringify(err));
+        const err = await safeJson(res);
+        alert('Failed to create task: ' + (err ? JSON.stringify(err) : `Server error (${res.status})`));
         return;
     }
 
