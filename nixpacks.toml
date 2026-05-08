@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["python312"]
+
+[phases.build]
+cmds = [
+    "pip install -r requirements.txt",
+    "python manage.py collectstatic --noinput"
+]
+
+[phases.deploy]
+cmds = ["python manage.py migrate"]
+
+[start]
+cmd = "gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000}"
