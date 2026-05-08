@@ -30,6 +30,8 @@ ALLOWED_HOSTS = ['*', '.railway.app', '.up.railway.app']
 
 CSRF_TRUSTED_ORIGINS = ['https://*.railway.app', 'https://*.up.railway.app']
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 
